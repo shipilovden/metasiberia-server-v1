@@ -118,6 +118,7 @@ class SimpleHandler(BaseHTTPRequestHandler):
                     
             except Exception as e:
                 # Если не можем подключиться к Substrata, показываем ошибку
+                print(f"Error connecting to Substrata server: {str(e)}")
                 self.send_response(503)
                 self.send_header('Content-type', 'text/html')
                 self.end_headers()
@@ -131,11 +132,16 @@ class SimpleHandler(BaseHTTPRequestHandler):
                         body {{ font-family: Arial, sans-serif; margin: 40px; background: #1a1a1a; color: #fff; text-align: center; }}
                         h1 {{ color: #ff6b6b; }}
                         a {{ color: #4CAF50; }}
+                        .error {{ background: #333; padding: 20px; border-radius: 8px; margin: 20px 0; }}
                     </style>
                 </head>
                 <body>
                     <h1>503 - Service Unavailable</h1>
-                    <p>Substrata server is not responding: {str(e)}</p>
+                    <div class="error">
+                        <p>Substrata server is not responding:</p>
+                        <p><code>{str(e)}</code></p>
+                        <p>Please wait a moment and try again, or check the server logs.</p>
+                    </div>
                     <a href="/">← Back to Home</a>
                 </body>
                 </html>
