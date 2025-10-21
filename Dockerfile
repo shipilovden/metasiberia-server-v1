@@ -90,3 +90,10 @@ RUN set -eux; \
     if [ -z "$BIN_PATH" ]; then echo "Substrata server binary not found"; exit 1; fi; \
     if [ "$BIN_PATH" != "/server/server" ]; then mv "$BIN_PATH" /server/server; fi; \
     chmod +x /server/server
+# --- Final robust binary setup ---
+RUN set -eux; \
+    BIN_PATH=$(find /server -maxdepth 4 -type f -name server | head -n 1 || true); \
+    if [ -z "$BIN_PATH" ]; then echo "❌ Substrata server binary not found"; exit 1; fi; \
+    if [ "$BIN_PATH" != "/server/server" ]; then echo "➡ Moving $BIN_PATH to /server/server" && mv "$BIN_PATH" /server/server; fi; \
+    chmod +x /server/server; \
+    echo "✅ Server binary ready at /server/server"
