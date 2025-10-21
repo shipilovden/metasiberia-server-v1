@@ -84,3 +84,9 @@ ENV PORT=10000
 
 # --- Start ---
 ENTRYPOINT ["/entrypoint.sh"]
+# --- Robust: locate Substrata binary and ensure /server/server exists ---
+RUN set -eux; \
+    BIN_PATH=$(find /server -maxdepth 4 -type f -name server | head -n 1 || true); \
+    if [ -z "$BIN_PATH" ]; then echo "Substrata server binary not found"; exit 1; fi; \
+    if [ "$BIN_PATH" != "/server/server" ]; then mv "$BIN_PATH" /server/server; fi; \
+    chmod +x /server/server
