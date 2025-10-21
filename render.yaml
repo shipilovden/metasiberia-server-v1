@@ -6,5 +6,5 @@
     dockerfilePath: ./Dockerfile
     autoDeploy: true
     envVars:
-      - key: SERVER_STATE_DIR
-        value: /server/server_data
+      - key: STATE_DIR
+        value: /root/cyberspace_server_state

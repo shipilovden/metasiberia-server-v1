@@ -1,7 +1,7 @@
 FROM ubuntu:22.04
 
 # cache-bust to invalidate layers on every change
-ARG CACHE_BUST=20251021194006
+ARG CACHE_BUST=20251021195000
 
 # Base tools
 RUN apt-get update && apt-get install -y \
@@ -68,5 +68,6 @@ RUN dos2unix /entrypoint.sh && chmod 755 /entrypoint.sh
 # Render maps to $PORT (usually 10000)
 EXPOSE 10000
 ENV PORT=10000
+ENV STATE_DIR=/root/cyberspace_server_state
 
 ENTRYPOINT ["/entrypoint.sh"]
