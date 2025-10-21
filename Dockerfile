@@ -1,7 +1,7 @@
 FROM ubuntu:22.04
 
 # cache-bust to invalidate layers on every change
-ARG CACHE_BUST=20251021250000
+ARG CACHE_BUST=20251021260000
 
 # Base tools
 RUN apt-get update && apt-get install -y \
@@ -29,13 +29,19 @@ RUN set -eux; \
     mkdir -p "$STATE_DIR" "$STATE_DIR/dist_resources" "$STATE_DIR/webclient" /var/www/cyberspace/screenshots \
     /server/server_data/webclient
 
-# 4) Dist resources + webclient
+# 4) Dist resources + webclient (using local files)
+COPY server_dist_files.zip /tmp/server_dist_files.zip
+COPY substrata_webclient_1.5.7.zip /tmp/substrata_webclient_1.5.7.zip
 RUN set -eux; \
-    wget -O /tmp/server_dist_files.zip https://downloads.indigorenderer.com/dist/cyberspace/server_dist_files.zip; \
-    unzip -o /tmp/server_dist_files.zip -d "$STATE_DIR"; rm /tmp/server_dist_files.zip; \
-    wget -O /tmp/substrata_webclient_1.5.7.zip https://downloads.indigorenderer.com/dist/cyberspace/substrata_webclient_1.5.7.zip; \
-    unzip -o /tmp/substrata_webclient_1.5.7.zip -d "$STATE_DIR/webclient"; rm /tmp/substrata_webclient_1.5.7.zip; \
-    cp -r "$STATE_DIR/webclient"/* /server/server_data/webclient/
+    echo "Extracting server_dist_files.zip..."; \
+    unzip -o /tmp/server_dist_files.zip -d "$STATE_DIR"; \
+    echo "Extracting substrata_webclient_1.5.7.zip..."; \
+    unzip -o /tmp/substrata_webclient_1.5.7.zip -d "$STATE_DIR/webclient"; \
+    echo "Copying webclient files to server_data..."; \
+    cp -r "$STATE_DIR/webclient"/* /server/server_data/webclient/; \
+    echo "Cleaning up zip files..."; \
+    rm /tmp/server_dist_files.zip /tmp/substrata_webclient_1.5.7.zip; \
+    echo "Files extracted successfully!"
 
 # 5) Generate TLS certificates (required by Substrata server)
 RUN set -eux; \
