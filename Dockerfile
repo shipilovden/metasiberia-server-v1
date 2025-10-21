@@ -30,7 +30,12 @@ RUN openssl req -new -newkey rsa:4096 -x509 -sha256 -days 3650 -nodes \
 # Копируем наши конфиги/правки (если есть в репо)
 COPY server/server_data/substrata_server_config.xml /server/server_data/substrata_server_config.xml
 
-EXPOSE 443
+EXPOSE 10000
 
 # В дистрибутиве бинарник называется 'server' (без .exe)
 CMD ["/server/server"]
+# Entrypoint: подставляем PORT от Render и запускаем сервер
+COPY entrypoint.sh /entrypoint.sh
+RUN apt-get update && apt-get install -y dos2unix && dos2unix /entrypoint.sh && chmod +x /entrypoint.sh
+ENV PORT=10000
+CMD ["/entrypoint.sh"]
