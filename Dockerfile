@@ -1,11 +1,11 @@
 FROM ubuntu:22.04
 
 # cache-bust to invalidate layers on every change
-ARG CACHE_BUST=20251021210000
+ARG CACHE_BUST=20251021220000
 
 # Base tools
 RUN apt-get update && apt-get install -y \
-    wget unzip ca-certificates openssl dos2unix python3 python3-pip \
+    wget unzip ca-certificates openssl dos2unix \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /server
@@ -37,9 +37,9 @@ RUN set -eux; \
     unzip -o /tmp/substrata_webclient_1.5.7.zip -d "$STATE_DIR/webclient"; rm /tmp/substrata_webclient_1.5.7.zip; \
     cp -r "$STATE_DIR/webclient"/* /server/server_data/webclient/
 
-# 5) Create dummy TLS certificates (server requires them even for HTTP)
+# 5) Generate TLS certificates (required by Substrata server)
 RUN set -eux; \
-    openssl req -new -newkey rsa:2048 -x509 -sha256 -days 3650 -nodes \
+    openssl req -new -newkey rsa:4096 -x509 -sha256 -days 3650 -nodes \
       -subj "/O=Metasiberia/OU=Server/CN=localhost" \
       -out "$STATE_DIR/MyCertificate.crt" -keyout "$STATE_DIR/MyKey.key"
 
@@ -67,11 +67,7 @@ RUN set -eux; \
 ARG CACHE_BUST
 RUN echo "CACHE_BUST=$CACHE_BUST"
 
-# 8) HTTP Proxy
-COPY http_proxy.py /http_proxy.py
-RUN chmod 755 /http_proxy.py
-
-# 9) Entrypoint
+# 8) Entrypoint
 COPY entrypoint.sh /entrypoint.sh
 RUN dos2unix /entrypoint.sh && chmod 755 /entrypoint.sh
 
