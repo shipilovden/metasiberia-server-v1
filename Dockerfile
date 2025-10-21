@@ -1,7 +1,7 @@
 FROM ubuntu:22.04
 
 # cache-bust to invalidate layers on every change
-ARG CACHE_BUST=20251021195000
+ARG CACHE_BUST=20251021200000
 
 # Base tools
 RUN apt-get update && apt-get install -y \
@@ -26,14 +26,16 @@ RUN set -eux; \
 # 3) Prepare server_state_dir
 ENV STATE_DIR=/root/cyberspace_server_state
 RUN set -eux; \
-    mkdir -p "$STATE_DIR" "$STATE_DIR/dist_resources" "$STATE_DIR/webclient" /var/www/cyberspace/screenshots
+    mkdir -p "$STATE_DIR" "$STATE_DIR/dist_resources" "$STATE_DIR/webclient" /var/www/cyberspace/screenshots \
+    /server/server_data/webclient
 
 # 4) Dist resources + webclient
 RUN set -eux; \
     wget -O /tmp/server_dist_files.zip https://downloads.indigorenderer.com/dist/cyberspace/server_dist_files.zip; \
     unzip -o /tmp/server_dist_files.zip -d "$STATE_DIR"; rm /tmp/server_dist_files.zip; \
     wget -O /tmp/substrata_webclient_1.5.7.zip https://downloads.indigorenderer.com/dist/cyberspace/substrata_webclient_1.5.7.zip; \
-    unzip -o /tmp/substrata_webclient_1.5.7.zip -d "$STATE_DIR/webclient"; rm /tmp/substrata_webclient_1.5.7.zip
+    unzip -o /tmp/substrata_webclient_1.5.7.zip -d "$STATE_DIR/webclient"; rm /tmp/substrata_webclient_1.5.7.zip; \
+    cp -r "$STATE_DIR/webclient"/* /server/server_data/webclient/
 
 # 5) Self-signed TLS
 RUN set -eux; \
@@ -44,8 +46,10 @@ RUN set -eux; \
 # 6) Config: use repo seed if present, else minimal default
 COPY server/server_data/substrata_server_config.xml /server/_seed_config.xml
 RUN set -eux; \
+    mkdir -p /server/server_data; \
     if [ -f /server/_seed_config.xml ]; then \
-      mv /server/_seed_config.xml "$STATE_DIR/substrata_server_config.xml"; \
+      cp /server/_seed_config.xml "$STATE_DIR/substrata_server_config.xml"; \
+      cp /server/_seed_config.xml /server/server_data/substrata_server_config.xml; \
     else \
       printf '%s\n' \
         '<server_config>' \
@@ -55,6 +59,7 @@ RUN set -eux; \
         '  <port>10000</port>' \
         '</server_config>' \
         > "$STATE_DIR/substrata_server_config.xml"; \
+      cp "$STATE_DIR/substrata_server_config.xml" /server/server_data/substrata_server_config.xml; \
     fi
 
 # 7) Bust cache right before COPY entrypoint.sh
