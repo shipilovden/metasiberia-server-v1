@@ -44,3 +44,8 @@ COPY entrypoint.sh /entrypoint.sh
 RUN chmod 755 /entrypoint.sh
 ENV PORT=10000
 ENTRYPOINT ["/entrypoint.sh"]
+# --- Entrypoint for Render ---
+COPY entrypoint.sh /entrypoint.sh
+RUN apt-get update && apt-get install -y dos2unix && dos2unix /entrypoint.sh && chmod 755 /entrypoint.sh
+ENV PORT=10000
+ENTRYPOINT ["/entrypoint.sh"]

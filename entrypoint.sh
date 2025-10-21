@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -e
 
-# ???? Render ?????? ????, ????????? ??? ? ??????
-if [ -n "\" ]; then
-  sed -i "s#<port>.*</port>#<port>\</port>#" /server/server_data/substrata_server_config.xml
+# Если Render задаёт порт, подставим его в конфиг
+if [ -n "$PORT" ]; then
+  sed -i "s#<port>.*</port>#<port>${PORT}</port>#" /server/server_data/substrata_server_config.xml
 fi
 
-# ????????? Substrata server
+# Запускаем Substrata server
 exec /server/server
