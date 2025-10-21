@@ -1,11 +1,11 @@
 FROM ubuntu:22.04
 
 # cache-bust to invalidate layers on every change
-ARG CACHE_BUST=20251021290000
+ARG CACHE_BUST=20251021291000
 
 # Base tools
 RUN apt-get update && apt-get install -y \
-    wget unzip ca-certificates openssl dos2unix python3 \
+    wget unzip ca-certificates dos2unix python3 \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /server

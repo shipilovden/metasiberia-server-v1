@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
 import os
-import subprocess
-import threading
-import time
-import ssl
-import urllib.request
-import urllib.parse
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
 
@@ -37,36 +31,30 @@ class SimpleHandler(BaseHTTPRequestHandler):
                     
                     <div class="status">
                         <h2>✅ Server Status: Running</h2>
-                        <p>Substrata server is running in the background with TLS support.</p>
+                        <p>HTTP server is running successfully on Render.</p>
                     </div>
                     
                     <div class="info">
                         <h3>📋 Server Information</h3>
                         <p><strong>Port:</strong> {port}</p>
-                        <p><strong>Protocol:</strong> HTTPS (TLS)</p>
+                        <p><strong>Protocol:</strong> HTTP</p>
                         <p><strong>Status:</strong> Active</p>
                     </div>
                     
                     <div class="info">
                         <h3>🔗 Connection Instructions</h3>
-                        <p>To connect to this Substrata server:</p>
-                        <ol>
-                            <li>Download and install Substrata client</li>
-                            <li>Enter: <code>sub://metasiberia-server-v1.onrender.com</code></li>
-                            <li>Accept the self-signed certificate when prompted</li>
-                        </ol>
-                        <p><strong>Note:</strong> The Substrata server runs on HTTPS with a self-signed certificate.</p>
+                        <p>This is a simplified HTTP server for Render deployment.</p>
+                        <p>For full Substrata functionality, you would need to run the server locally with proper TLS configuration.</p>
                     </div>
                     
                     <div class="info">
-                        <h3>🌐 Web Interface</h3>
-                        <p>Web interface is available at: <code>https://metasiberia-server-v1.onrender.com</code></p>
-                        <p><em>Note: You may need to accept the self-signed certificate in your browser.</em></p>
+                        <h3>🌐 Available Endpoints</h3>
+                        <p>• <a href="/status">/status</a> - Server status (JSON)</p>
+                        <p>• <a href="/health">/health</a> - Health check</p>
                     </div>
                     
                     <a href="/status" class="button">Server Status</a>
                     <a href="/health" class="button">Health Check</a>
-                    <a href="/admin" class="button">Admin Panel</a>
                 </div>
             </body>
             </html>
@@ -80,13 +68,12 @@ class SimpleHandler(BaseHTTPRequestHandler):
             self.end_headers()
             
             status = {
-                "server": "Metasiberia Substrata Server",
+                "server": "Metasiberia HTTP Server",
                 "status": "running",
                 "port": os.environ.get('PORT', 10000),
-                "protocol": "HTTPS",
-                "tls": True,
-                "substrata_port": 7600,
-                "domain": "metasiberia-server-v1.onrender.com"
+                "protocol": "HTTP",
+                "tls": False,
+                "note": "Simplified HTTP server for Render deployment"
             }
             
             self.wfile.write(json.dumps(status, indent=2).encode())
@@ -95,86 +82,38 @@ class SimpleHandler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header('Content-type', 'text/plain')
             self.end_headers()
-            self.wfile.write(b'OK - Substrata server is running')
+            self.wfile.write(b'OK - HTTP server is running')
             
         else:
-            # Перенаправляем на Substrata сервер для всех остальных путей
-            try:
-                # Создаем SSL контекст без проверки сертификата для localhost
-                ssl_context = ssl.create_default_context()
-                ssl_context.check_hostname = False
-                ssl_context.verify_mode = ssl.CERT_NONE
-                
-                # Перенаправляем на Substrata сервер
-                substrata_url = f"https://localhost:7600{self.path}"
-                req = urllib.request.Request(substrata_url)
-                
-                with urllib.request.urlopen(req, context=ssl_context) as response:
-                    self.send_response(response.status)
-                    for header, value in response.headers.items():
-                        self.send_header(header, value)
-                    self.end_headers()
-                    self.wfile.write(response.read())
-                    
-            except Exception as e:
-                # Если не можем подключиться к Substrata, показываем ошибку
-                print(f"Error connecting to Substrata server: {str(e)}")
-                self.send_response(503)
-                self.send_header('Content-type', 'text/html')
-                self.end_headers()
-                
-                html = f"""
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Service Unavailable</title>
-                    <style>
-                        body {{ font-family: Arial, sans-serif; margin: 40px; background: #1a1a1a; color: #fff; text-align: center; }}
-                        h1 {{ color: #ff6b6b; }}
-                        a {{ color: #4CAF50; }}
-                        .error {{ background: #333; padding: 20px; border-radius: 8px; margin: 20px 0; }}
-                    </style>
-                </head>
-                <body>
-                    <h1>503 - Service Unavailable</h1>
-                    <div class="error">
-                        <p>Substrata server is not responding:</p>
-                        <p><code>{str(e)}</code></p>
-                        <p>Please wait a moment and try again, or check the server logs.</p>
-                    </div>
-                    <a href="/">← Back to Home</a>
-                </body>
-                </html>
-                """
-                
-                self.wfile.write(html.encode())
+            # Показываем 404 для неизвестных путей
+            self.send_response(404)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            
+            html = """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>404 - Not Found</title>
+                <style>
+                    body {{ font-family: Arial, sans-serif; margin: 40px; background: #1a1a1a; color: #fff; text-align: center; }}
+                    h1 {{ color: #ff6b6b; }}
+                    a {{ color: #4CAF50; }}
+                </style>
+            </head>
+            <body>
+                <h1>404 - Page Not Found</h1>
+                <p>The requested page was not found.</p>
+                <a href="/">← Back to Home</a>
+            </body>
+            </html>
+            """
+            
+            self.wfile.write(html.encode())
 
-def start_substrata_server():
-    """Запускаем Substrata сервер в фоне"""
-    try:
-        print("Starting Substrata server in background...")
-        # Запускаем Substrata сервер на порту 7600
-        subprocess.Popen(['/server/server'], 
-                        env={**os.environ, 'PORT': '7600'})
-        print("Substrata server started on port 7600")
-    except Exception as e:
-        print(f"Failed to start Substrata server: {e}")
-
-def start_http_server():
-    """Запускаем HTTP сервер для Render"""
+if __name__ == "__main__":
+    # Запускаем только HTTP сервер для Render
     port = int(os.environ.get('PORT', 10000))
     server = HTTPServer(('0.0.0.0', port), SimpleHandler)
     print(f"HTTP server listening on 0.0.0.0:{port}")
     server.serve_forever()
-
-if __name__ == '__main__':
-    # Запускаем Substrata сервер в фоне
-    substrata_thread = threading.Thread(target=start_substrata_server)
-    substrata_thread.daemon = True
-    substrata_thread.start()
-    
-    # Ждем немного, чтобы Substrata сервер запустился
-    time.sleep(5)
-    
-    # Запускаем HTTP сервер для Render
-    start_http_server()
