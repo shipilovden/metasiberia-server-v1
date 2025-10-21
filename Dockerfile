@@ -1,7 +1,7 @@
 FROM ubuntu:22.04
 
 # cache-bust to invalidate layers on every change
-ARG CACHE_BUST=20251021203000
+ARG CACHE_BUST=20251021204000
 
 # Base tools
 RUN apt-get update && apt-get install -y \
@@ -57,6 +57,7 @@ RUN set -eux; \
         '  <tls_cert_file>MyCertificate.crt</tls_cert_file>' \
         '  <tls_key_file>MyKey.key</tls_key_file>' \
         '  <port>10000</port>' \
+        '  <bind_address>0.0.0.0</bind_address>' \
         '</server_config>' \
         > "$STATE_DIR/substrata_server_config.xml"; \
       cp "$STATE_DIR/substrata_server_config.xml" /server/server_data/substrata_server_config.xml; \

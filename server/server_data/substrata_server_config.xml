@@ -3,4 +3,5 @@
   <tls_cert_file>MyCertificate.crt</tls_cert_file>
   <tls_key_file>MyKey.key</tls_key_file>
   <port>10000</port>
+  <bind_address>0.0.0.0</bind_address>
 </server_config>
