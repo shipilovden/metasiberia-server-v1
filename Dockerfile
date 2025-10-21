@@ -1,7 +1,7 @@
 FROM ubuntu:22.04
 
 # cache-bust to invalidate layers on every change
-ARG CACHE_BUST=20251021202000
+ARG CACHE_BUST=20251021203000
 
 # Base tools
 RUN apt-get update && apt-get install -y \
@@ -37,7 +37,11 @@ RUN set -eux; \
     unzip -o /tmp/substrata_webclient_1.5.7.zip -d "$STATE_DIR/webclient"; rm /tmp/substrata_webclient_1.5.7.zip; \
     cp -r "$STATE_DIR/webclient"/* /server/server_data/webclient/
 
-# 5) No TLS needed for HTTP deployment
+# 5) Create dummy TLS certificates (server requires them even for HTTP)
+RUN set -eux; \
+    openssl req -new -newkey rsa:2048 -x509 -sha256 -days 3650 -nodes \
+      -subj "/O=Metasiberia/OU=Server/CN=localhost" \
+      -out "$STATE_DIR/MyCertificate.crt" -keyout "$STATE_DIR/MyKey.key"
 
 # 6) Config: use repo seed if present, else minimal default
 COPY server/server_data/substrata_server_config.xml /server/_seed_config.xml
@@ -50,6 +54,8 @@ RUN set -eux; \
       printf '%s\n' \
         '<server_config>' \
         "  <webclient_dir>$STATE_DIR/webclient</webclient_dir>" \
+        '  <tls_cert_file>MyCertificate.crt</tls_cert_file>' \
+        '  <tls_key_file>MyKey.key</tls_key_file>' \
         '  <port>10000</port>' \
         '</server_config>' \
         > "$STATE_DIR/substrata_server_config.xml"; \
