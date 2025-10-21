@@ -1,11 +1,11 @@
 FROM ubuntu:22.04
 
 # cache-bust to invalidate layers on every change
-ARG CACHE_BUST=20251021220000
+ARG CACHE_BUST=20251021230000
 
 # Base tools
 RUN apt-get update && apt-get install -y \
-    wget unzip ca-certificates openssl dos2unix \
+    wget unzip ca-certificates openssl dos2unix python3 \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /server
@@ -67,7 +67,11 @@ RUN set -eux; \
 ARG CACHE_BUST
 RUN echo "CACHE_BUST=$CACHE_BUST"
 
-# 8) Entrypoint
+# 8) Simple HTTP Server
+COPY simple_server.py /simple_server.py
+RUN chmod 755 /simple_server.py
+
+# 9) Entrypoint
 COPY entrypoint.sh /entrypoint.sh
 RUN dos2unix /entrypoint.sh && chmod 755 /entrypoint.sh
 
