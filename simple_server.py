@@ -66,6 +66,7 @@ class SimpleHandler(BaseHTTPRequestHandler):
                     
                     <a href="/status" class="button">Server Status</a>
                     <a href="/health" class="button">Health Check</a>
+                    <a href="/admin" class="button">Admin Panel</a>
                 </div>
             </body>
             </html>
@@ -97,31 +98,50 @@ class SimpleHandler(BaseHTTPRequestHandler):
             self.wfile.write(b'OK - Substrata server is running')
             
         else:
-            # Просто показываем 404 для неизвестных путей
-            self.send_response(404)
-            self.send_header('Content-type', 'text/html')
-            self.end_headers()
-            
-            html = """
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>404 - Not Found</title>
-                <style>
-                    body {{ font-family: Arial, sans-serif; margin: 40px; background: #1a1a1a; color: #fff; text-align: center; }}
-                    h1 {{ color: #ff6b6b; }}
-                    a {{ color: #4CAF50; }}
-                </style>
-            </head>
-            <body>
-                <h1>404 - Page Not Found</h1>
-                <p>The requested page was not found.</p>
-                <a href="/">← Back to Home</a>
-            </body>
-            </html>
-            """
-            
-            self.wfile.write(html.encode())
+            # Перенаправляем на Substrata сервер для всех остальных путей
+            try:
+                # Создаем SSL контекст без проверки сертификата для localhost
+                ssl_context = ssl.create_default_context()
+                ssl_context.check_hostname = False
+                ssl_context.verify_mode = ssl.CERT_NONE
+                
+                # Перенаправляем на Substrata сервер
+                substrata_url = f"https://localhost:7600{self.path}"
+                req = urllib.request.Request(substrata_url)
+                
+                with urllib.request.urlopen(req, context=ssl_context) as response:
+                    self.send_response(response.status)
+                    for header, value in response.headers.items():
+                        self.send_header(header, value)
+                    self.end_headers()
+                    self.wfile.write(response.read())
+                    
+            except Exception as e:
+                # Если не можем подключиться к Substrata, показываем ошибку
+                self.send_response(503)
+                self.send_header('Content-type', 'text/html')
+                self.end_headers()
+                
+                html = f"""
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Service Unavailable</title>
+                    <style>
+                        body {{ font-family: Arial, sans-serif; margin: 40px; background: #1a1a1a; color: #fff; text-align: center; }}
+                        h1 {{ color: #ff6b6b; }}
+                        a {{ color: #4CAF50; }}
+                    </style>
+                </head>
+                <body>
+                    <h1>503 - Service Unavailable</h1>
+                    <p>Substrata server is not responding: {str(e)}</p>
+                    <a href="/">← Back to Home</a>
+                </body>
+                </html>
+                """
+                
+                self.wfile.write(html.encode())
 
 def start_substrata_server():
     """Запускаем Substrata сервер в фоне"""
