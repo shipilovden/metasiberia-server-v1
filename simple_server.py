@@ -51,16 +51,17 @@ class SimpleHandler(BaseHTTPRequestHandler):
                         <h3>🔗 Connection Instructions</h3>
                         <p>To connect to this Substrata server:</p>
                         <ol>
-                            <li>Open Substrata client</li>
+                            <li>Download and install Substrata client</li>
                             <li>Enter: <code>sub://metasiberia-server-v1.onrender.com</code></li>
-                            <li>Or: <code>sub://metasiberia-server-v1.onrender.com:7600</code></li>
+                            <li>Accept the self-signed certificate when prompted</li>
                         </ol>
+                        <p><strong>Note:</strong> The Substrata server runs on HTTPS with a self-signed certificate.</p>
                     </div>
                     
                     <div class="info">
                         <h3>🌐 Web Interface</h3>
                         <p>Web interface is available at: <code>https://metasiberia-server-v1.onrender.com</code></p>
-                        <p><em>Note: You may need to accept the self-signed certificate.</em></p>
+                        <p><em>Note: You may need to accept the self-signed certificate in your browser.</em></p>
                     </div>
                     
                     <a href="/status" class="button">Server Status</a>
@@ -96,26 +97,31 @@ class SimpleHandler(BaseHTTPRequestHandler):
             self.wfile.write(b'OK - Substrata server is running')
             
         else:
-            # Пытаемся перенаправить на Substrata сервер
-            try:
-                # Создаем SSL контекст без проверки сертификата
-                ssl_context = ssl.create_default_context()
-                ssl_context.check_hostname = False
-                ssl_context.verify_mode = ssl.CERT_NONE
-                
-                # Перенаправляем на Substrata сервер
-                substrata_url = f"https://localhost:7600{self.path}"
-                req = urllib.request.Request(substrata_url)
-                
-                with urllib.request.urlopen(req, context=ssl_context) as response:
-                    self.send_response(response.status)
-                    for header, value in response.headers.items():
-                        self.send_header(header, value)
-                    self.end_headers()
-                    self.wfile.write(response.read())
-                    
-            except Exception as e:
-                self.send_error(500, f"Proxy error: {str(e)}")
+            # Просто показываем 404 для неизвестных путей
+            self.send_response(404)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            
+            html = """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>404 - Not Found</title>
+                <style>
+                    body {{ font-family: Arial, sans-serif; margin: 40px; background: #1a1a1a; color: #fff; text-align: center; }}
+                    h1 {{ color: #ff6b6b; }}
+                    a {{ color: #4CAF50; }}
+                </style>
+            </head>
+            <body>
+                <h1>404 - Page Not Found</h1>
+                <p>The requested page was not found.</p>
+                <a href="/">← Back to Home</a>
+            </body>
+            </html>
+            """
+            
+            self.wfile.write(html.encode())
 
 def start_substrata_server():
     """Запускаем Substrata сервер в фоне"""
