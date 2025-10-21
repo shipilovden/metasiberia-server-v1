@@ -93,13 +93,13 @@ class SimpleHandler(BaseHTTPRequestHandler):
             self.end_headers()
             
             status = {
-                \"server\": \"Metasiberia HTTP Server\",
-                \"status\": \"running\",
-                \"port\": os.environ.get('PORT', 10000),
-                \"protocol\": \"HTTP\",
-                \"tls\": False,
-                \"limitation\": \"Render only supports HTTP for web services\",
-                \"recommendation\": \"Use local installation or VPS for full Substrata functionality\"
+                'server': 'Metasiberia HTTP Server',
+                'status': 'running',
+                'port': os.environ.get('PORT', 10000),
+                'protocol': 'HTTP',
+                'tls': False,
+                'limitation': 'Render only supports HTTP for web services',
+                'recommendation': 'Use local installation or VPS for full Substrata functionality'
             }
             
             self.wfile.write(json.dumps(status, indent=2).encode())
@@ -116,18 +116,18 @@ class SimpleHandler(BaseHTTPRequestHandler):
             self.end_headers()
             
             info = {
-                \"substrata_connection\": {
-                    \"local\": \"sub://localhost\",
-                    \"note\": \"Requires local Substrata server with TLS\"
+                'substrata_connection': {
+                    'local': 'sub://localhost',
+                    'note': 'Requires local Substrata server with TLS'
                 },
-                \"render_limitation\": {
-                    \"issue\": \"Substrata requires HTTPS, Render only supports HTTP\",
-                    \"solution\": \"Use local installation or VPS\"
+                'render_limitation': {
+                    'issue': 'Substrata requires HTTPS, Render only supports HTTP',
+                    'solution': 'Use local installation or VPS'
                 },
-                \"alternatives\": [
-                    \"Local installation with TLS certificates\",
-                    \"VPS deployment (DigitalOcean, AWS, Vultr)\",
-                    \"Dedicated server with full control\"
+                'alternatives': [
+                    'Local installation with TLS certificates',
+                    'VPS deployment (DigitalOcean, AWS, Vultr)',
+                    'Dedicated server with full control'
                 ]
             }
             
@@ -137,7 +137,7 @@ class SimpleHandler(BaseHTTPRequestHandler):
             self.send_response(404)
             self.send_header('Content-type', 'text/html')
             self.end_headers()
-            self.wfile.write(b'<h1>404 - Not Found</h1><a href=\"/\">← Back to Home</a>')
+            self.wfile.write(b'<h1>404 - Not Found</h1><a href=\"/\">Back to Home</a>')
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
