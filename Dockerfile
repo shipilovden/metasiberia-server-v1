@@ -1,7 +1,7 @@
-﻿FROM ubuntu:22.04
+FROM ubuntu:22.04
 
 # cache-bust to invalidate layers on every change
-ARG CACHE_BUST=20251021145530
+ARG CACHE_BUST=20251021194006
 
 # Base tools
 RUN apt-get update && apt-get install -y \
