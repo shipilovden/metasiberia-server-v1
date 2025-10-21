@@ -49,3 +49,9 @@ COPY entrypoint.sh /entrypoint.sh
 RUN apt-get update && apt-get install -y dos2unix && dos2unix /entrypoint.sh && chmod 755 /entrypoint.sh
 ENV PORT=10000
 ENTRYPOINT ["/entrypoint.sh"]
+# --- Locate and move Substrata binary to /server ---
+RUN set -eux; \
+    BIN_PATH=$(find /server -maxdepth 3 -type f -name server | head -n 1); \
+    if [ -z "$BIN_PATH" ]; then echo "Substrata server binary not found"; exit 1; fi; \
+    mv "$BIN_PATH" /server/server; \
+    chmod +x /server/server
