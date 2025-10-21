@@ -1,6 +1,4 @@
 ﻿<server_config>
   <webclient_dir>/server/server_data/webclient</webclient_dir>
-  <tls_cert_file>MyCertificate.crt</tls_cert_file>
-  <tls_key_file>MyKey.key</tls_key_file>
-  <port>443</port>
+  <port>10000</port>
 </server_config>
