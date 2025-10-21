@@ -1,7 +1,7 @@
 FROM ubuntu:22.04
 
 # cache-bust to invalidate layers on every change
-ARG CACHE_BUST=20251021230000
+ARG CACHE_BUST=20251021240000
 
 # Base tools
 RUN apt-get update && apt-get install -y \
@@ -40,7 +40,7 @@ RUN set -eux; \
 # 5) Generate TLS certificates (required by Substrata server)
 RUN set -eux; \
     openssl req -new -newkey rsa:4096 -x509 -sha256 -days 3650 -nodes \
-      -subj "/O=Metasiberia/OU=Server/CN=localhost" \
+      -subj "/O=Metasiberia/OU=Server/CN=metasiberia-server-v1.onrender.com" \
       -out "$STATE_DIR/MyCertificate.crt" -keyout "$STATE_DIR/MyKey.key"
 
 # 6) Config: use repo seed if present, else minimal default

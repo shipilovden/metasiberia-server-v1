@@ -3,6 +3,9 @@ import os
 import subprocess
 import threading
 import time
+import ssl
+import urllib.request
+import urllib.parse
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
 
@@ -19,13 +22,13 @@ class SimpleHandler(BaseHTTPRequestHandler):
             <head>
                 <title>Metasiberia Substrata Server</title>
                 <style>
-                    body { font-family: Arial, sans-serif; margin: 40px; background: #1a1a1a; color: #fff; }
-                    .container { max-width: 800px; margin: 0 auto; }
-                    h1 { color: #4CAF50; }
-                    .status { background: #333; padding: 20px; border-radius: 8px; margin: 20px 0; }
-                    .info { background: #2a2a2a; padding: 15px; border-radius: 5px; margin: 10px 0; }
-                    .button { background: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 5px; }
-                    .button:hover { background: #45a049; }
+                    body {{ font-family: Arial, sans-serif; margin: 40px; background: #1a1a1a; color: #fff; }}
+                    .container {{ max-width: 800px; margin: 0 auto; }}
+                    h1 {{ color: #4CAF50; }}
+                    .status {{ background: #333; padding: 20px; border-radius: 8px; margin: 20px 0; }}
+                    .info {{ background: #2a2a2a; padding: 15px; border-radius: 5px; margin: 10px 0; }}
+                    .button {{ background: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 10px 5px; }}
+                    .button:hover {{ background: #45a049; }}
                 </style>
             </head>
             <body>
@@ -49,14 +52,14 @@ class SimpleHandler(BaseHTTPRequestHandler):
                         <p>To connect to this Substrata server:</p>
                         <ol>
                             <li>Open Substrata client</li>
-                            <li>Enter: <code>sub://localhost:{port}</code></li>
-                            <li>Or: <code>sub://127.0.0.1:{port}</code></li>
+                            <li>Enter: <code>sub://metasiberia-server-v1.onrender.com</code></li>
+                            <li>Or: <code>sub://metasiberia-server-v1.onrender.com:7600</code></li>
                         </ol>
                     </div>
                     
                     <div class="info">
                         <h3>🌐 Web Interface</h3>
-                        <p>Web interface is available at: <code>https://localhost:{port}</code></p>
+                        <p>Web interface is available at: <code>https://metasiberia-server-v1.onrender.com</code></p>
                         <p><em>Note: You may need to accept the self-signed certificate.</em></p>
                     </div>
                     
@@ -80,7 +83,8 @@ class SimpleHandler(BaseHTTPRequestHandler):
                 "port": os.environ.get('PORT', 10000),
                 "protocol": "HTTPS",
                 "tls": True,
-                "substrata_port": 7600
+                "substrata_port": 7600,
+                "domain": "metasiberia-server-v1.onrender.com"
             }
             
             self.wfile.write(json.dumps(status, indent=2).encode())
@@ -92,10 +96,26 @@ class SimpleHandler(BaseHTTPRequestHandler):
             self.wfile.write(b'OK - Substrata server is running')
             
         else:
-            self.send_response(404)
-            self.send_header('Content-type', 'text/plain')
-            self.end_headers()
-            self.wfile.write(b'Not Found')
+            # Пытаемся перенаправить на Substrata сервер
+            try:
+                # Создаем SSL контекст без проверки сертификата
+                ssl_context = ssl.create_default_context()
+                ssl_context.check_hostname = False
+                ssl_context.verify_mode = ssl.CERT_NONE
+                
+                # Перенаправляем на Substrata сервер
+                substrata_url = f"https://localhost:7600{self.path}"
+                req = urllib.request.Request(substrata_url)
+                
+                with urllib.request.urlopen(req, context=ssl_context) as response:
+                    self.send_response(response.status)
+                    for header, value in response.headers.items():
+                        self.send_header(header, value)
+                    self.end_headers()
+                    self.wfile.write(response.read())
+                    
+            except Exception as e:
+                self.send_error(500, f"Proxy error: {str(e)}")
 
 def start_substrata_server():
     """Запускаем Substrata сервер в фоне"""
