@@ -56,7 +56,7 @@ RUN set -eux; \
     fi
 
 # 7) Entrypoint (normalize line endings & perms)
-ARG CACHE_BUST=20251021135459
+ARG CACHE_BUST=20251021143427
 COPY entrypoint.sh /entrypoint.sh
 RUN dos2unix /entrypoint.sh && chmod 755 /entrypoint.sh
 
@@ -65,4 +65,5 @@ EXPOSE 10000
 ENV PORT=10000
 
 ENTRYPOINT ["/entrypoint.sh"]
+
 
