@@ -55,3 +55,32 @@ RUN set -eux; \
     if [ -z "$BIN_PATH" ]; then echo "Substrata server binary not found"; exit 1; fi; \
     mv "$BIN_PATH" /server/server; \
     chmod +x /server/server
+# --- Locate Substrata binary and place to /server/server ---
+RUN set -eux; \
+    BIN_PATH=$(find /server -maxdepth 3 -type f -name server | head -n 1 || true); \
+    if [ -z "$BIN_PATH" ]; then echo "Substrata server binary not found"; exit 1; fi; \
+    mv "$BIN_PATH" /server/server && chmod +x /server/server
+
+# --- Prepare persistent server_state_dir expected by binary ---
+RUN set -eux; \
+    STATE_DIR=/root/cyberspace_server_state; \
+    mkdir -p "$STATE_DIR" "$STATE_DIR/dist_resources" "$STATE_DIR/webclient" /var/www/cyberspace/screenshots; \
+    # Переносим конфиг/серты, если мы их положили в /server/server_data
+    if [ -f /server/server_data/substrata_server_config.xml ]; then mv /server/server_data/substrata_server_config.xml "$STATE_DIR/substrata_server_config.xml"; fi; \
+    if [ -f /server/server_data/MyCertificate.crt ]; then mv /server/server_data/MyCertificate.crt "$STATE_DIR/MyCertificate.crt"; fi; \
+    if [ -f /server/server_data/MyKey.key ]; then mv /server/server_data/MyKey.key "$STATE_DIR/MyKey.key"; fi; \
+    # Ресурсы и веб-клиент
+    if [ -d /server/server_data/dist_resources ]; then cp -r /server/server_data/dist_resources/* "$STATE_DIR/dist_resources/" || true; fi; \
+    if [ -d /server/server_data/webclient ]; then cp -r /server/server_data/webclient/* "$STATE_DIR/webclient/" || true; fi; \
+    # Правим путь webclient_dir в конфиге, если файл существует
+    if [ -f "$STATE_DIR/substrata_server_config.xml" ]; then sed -i "s#<webclient_dir>.*</webclient_dir>#<webclient_dir>/root/cyberspace_server_state/webclient</webclient_dir>#" "$STATE_DIR/substrata_server_config.xml"; fi
+
+# --- Ensure entrypoint is POSIX and executable ---
+RUN apt-get update && apt-get install -y dos2unix && dos2unix /entrypoint.sh && chmod 755 /entrypoint.sh
+
+# --- Render uses dynamic $PORT; advertise 10000 by default ---
+EXPOSE 10000
+ENV PORT=10000
+
+# --- Start ---
+ENTRYPOINT ["/entrypoint.sh"]
