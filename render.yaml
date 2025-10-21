@@ -1,0 +1,10 @@
+﻿services:
+  - type: web
+    name: metasiberia-server
+    env: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    autoDeploy: true
+    envVars:
+      - key: SERVER_STATE_DIR
+        value: /server/server_data
