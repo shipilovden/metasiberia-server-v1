@@ -1,11 +1,11 @@
 FROM ubuntu:22.04
 
 # cache-bust to invalidate layers on every change
-ARG CACHE_BUST=20251021291000
+ARG CACHE_BUST=20251021293000
 
 # Base tools
 RUN apt-get update && apt-get install -y \
-    wget unzip ca-certificates dos2unix python3 \
+    wget unzip ca-certificates openssl dos2unix python3 \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /server
@@ -16,20 +16,20 @@ RUN set -eux; \
     tar -xzf SubstrataServer_v1.5.7.tar.gz; \
     rm SubstrataServer_v1.5.7.tar.gz
 
-# 2) Ensure /server/server exists (no "mv same file")
+# 2) Find and setup server binary
 RUN set -eux; \
     BIN_PATH=$(find /server -maxdepth 4 -type f -name server | head -n 1); \
     if [ -z "$BIN_PATH" ]; then echo "Substrata server binary not found"; exit 1; fi; \
     if [ "$BIN_PATH" != "/server/server" ]; then cp "$BIN_PATH" /server/server; fi; \
     chmod +x /server/server
 
-# 3) Prepare server_state_dir
+# 3) Setup server state directory
 ENV STATE_DIR=/root/cyberspace_server_state
 RUN set -eux; \
-    mkdir -p "$STATE_DIR" "$STATE_DIR/dist_resources" "$STATE_DIR/webclient" /var/www/cyberspace/screenshots \
-    /server/server_data/webclient
+    mkdir -p "$STATE_DIR" "$STATE_DIR/dist_resources" "$STATE_DIR/webclient" \
+    /var/www/cyberspace/screenshots /server/server_data/webclient
 
-# 4) Dist resources + webclient (using local files)
+# 4) Copy and extract distribution files
 COPY server_dist_files.zip /tmp/server_dist_files.zip
 COPY substrata_webclient_1.5.7.zip /tmp/substrata_webclient_1.5.7.zip
 RUN set -eux; \
@@ -43,41 +43,27 @@ RUN set -eux; \
     rm /tmp/server_dist_files.zip /tmp/substrata_webclient_1.5.7.zip; \
     echo "Files extracted successfully!"
 
-# 5) Generate TLS certificates (required by Substrata server)
+# 5) Generate TLS certificates for Render domain
 RUN set -eux; \
     openssl req -new -newkey rsa:4096 -x509 -sha256 -days 3650 -nodes \
       -subj "/O=Metasiberia/OU=Server/CN=metasiberia-server-v1.onrender.com" \
       -out "$STATE_DIR/MyCertificate.crt" -keyout "$STATE_DIR/MyKey.key"
 
-# 6) Config: use repo seed if present, else minimal default
-COPY server/server_data/substrata_server_config.xml /server/_seed_config.xml
+# 6) Create server configuration
 RUN set -eux; \
     mkdir -p /server/server_data; \
-    if [ -f /server/_seed_config.xml ]; then \
-      cp /server/_seed_config.xml "$STATE_DIR/substrata_server_config.xml"; \
-      cp /server/_seed_config.xml /server/server_data/substrata_server_config.xml; \
-    else \
-      printf '%s\n' \
-        '<server_config>' \
-        "  <webclient_dir>$STATE_DIR/webclient</webclient_dir>" \
-        '  <tls_cert_file>MyCertificate.crt</tls_cert_file>' \
-        '  <tls_key_file>MyKey.key</tls_key_file>' \
-        '  <port>10000</port>' \
-        '  <bind_address>0.0.0.0</bind_address>' \
-        '</server_config>' \
-        > "$STATE_DIR/substrata_server_config.xml"; \
-      cp "$STATE_DIR/substrata_server_config.xml" /server/server_data/substrata_server_config.xml; \
-    fi
+    printf '%s\n' \
+      '<server_config>' \
+      "  <webclient_dir>$STATE_DIR/webclient</webclient_dir>" \
+      '  <tls_cert_file>MyCertificate.crt</tls_cert_file>' \
+      '  <tls_key_file>MyKey.key</tls_key_file>' \
+      '  <port>10000</port>' \
+      '  <bind_address>0.0.0.0</bind_address>' \
+      '</server_config>' \
+      > "$STATE_DIR/substrata_server_config.xml"; \
+    cp "$STATE_DIR/substrata_server_config.xml" /server/server_data/substrata_server_config.xml
 
-# 7) Bust cache right before COPY entrypoint.sh
-ARG CACHE_BUST
-RUN echo "CACHE_BUST=$CACHE_BUST"
-
-# 8) Simple HTTP Server
-COPY simple_server.py /simple_server.py
-RUN chmod 755 /simple_server.py
-
-# 9) Entrypoint
+# 7) Copy entrypoint
 COPY entrypoint.sh /entrypoint.sh
 RUN dos2unix /entrypoint.sh && chmod 755 /entrypoint.sh
 
